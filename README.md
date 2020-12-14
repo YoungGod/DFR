@@ -1,7 +1,7 @@
 # DFR
 Project: Unsupervised Anomaly Segmentation via Deep Feature Reconstruction
 
-Paper: Unsupervised anomaly segmentation via deep feature reconstruction  | **[Neurocomputing]**[`pdf`](https://www.sciencedirect.com/science/article/pii/S0925231220317951)['code'](https://github.com/YoungGod/DFR)
+Paper: Unsupervised anomaly segmentation via deep feature reconstruction  | **[Neurocomputing]**[`pdf`](https://www.sciencedirect.com/science/article/pii/S0925231220317951)['code'](https://github.com/YoungGod/DFR) | **arxive preprint**['pdf'](https://arxiv.org/user/)
 
 Introduction: Automatic detecting anomalous regions in images of objects or textures without priors of the anomalies is challenging, especially when the anomalies appear in very small areas of the images, making difficult-to-detect visual variations, such as defects on manufacturing products.
 	This paper proposes an effective unsupervised anomaly segmentation approach that can detect and segment out the anomalies in small and confined regions of images. Concretely, we develop a multi-scale regional feature generator which can generate multiple spatial context-aware representations from pre-trained deep convolutional networks for every subregion of an image. 

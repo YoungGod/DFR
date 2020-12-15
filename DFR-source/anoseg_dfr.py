@@ -125,9 +125,6 @@ class AnoSegDFR():
         return autoencoder, model_name
 
     def build_dataset(self, is_train):
-#         if self.data_name == "wine":
-#             from Wine import NormalDataset, TestDataset
-#         else:
         from MVTec import NormalDataset, TestDataset
         normal_data_path = self.train_data_path
         abnormal_data_path = self.test_data_path
@@ -214,10 +211,6 @@ class AnoSegDFR():
 
         # forward
         input_data = self.extractor(input_data)
-        # # random select 10000 samples
-        # n = input_data.shape[0]
-        # idx = torch.randint(low=0, high=n, size=(min(20000, n),)).to(self.device)
-        # input_data = torch.index_select(input_data, dim=0, index=idx)
 
         # print(input_data.size())
         dec = self.autoencoder(input_data)
@@ -413,125 +406,6 @@ class AnoSegDFR():
                 self.save_seg_results(normalize(scores), binary_scores, mask, name)
             # self.save_seg_results((scores-score_min)/score_range, binary_scores, mask, name)
             print("Batch {},".format(i), "Cost total time {}s".format(time.time()-time_start))
-
-
-    ########################################################
-    #  Evaluation (AUC and PRO-AUC)
-    ########################################################
-    def pro_auc_evaluation(self, expect_fpr=0.3):
-        if self.load_model():
-            print("Model Loaded.")
-        else:
-            print("None pretrained models.")
-            return
-
-        from sklearn.metrics import auc
-        i = 0
-        time_start = time.time()
-        masks = []
-        scores = []
-        for i, (img, mask, name) in enumerate(self.test_data_loader):  # batch size is 1.
-            i += 1
-            # data
-            img = img.to(self.device)
-            mask = mask.squeeze().numpy()
-
-            # score
-            score = self.score(img).data.cpu().numpy()
-
-            # save results, save score as .npy
-            # score_path = os.path.join("Results", self.subpath + "/array_scores")
-            # if not os.path.exists(score_path):
-            #     os.makedirs(score_path)
-            # mask_path = os.path.join("Results", self.subpath + "/array_masks")
-            # if not os.path.exists(mask_path):
-            #     os.makedirs(mask_path)
-            # print(name)
-            # img_name = name[0].split("/")
-            # img_name = "-".join(img_name[-2:])
-            # np.save(os.path.join(score_path, "{}".format(img_name)), score)
-            # np.save(os.path.join(mask_path, "{}".format(img_name)), mask.astype(np.bool))
-
-            masks.append(mask)
-            scores.append(score)
-            print("Batch {},".format(i), "Cost total time {}s".format(time.time() - time_start))
-
-        # as array
-        masks = np.array(masks)
-        masks[masks <= 0.5] = 0
-        masks[masks > 0.5] = 1
-        masks = masks.astype(np.bool)
-        scores = np.array(scores)
-
-        # auc score
-        auc_score, roc = auc_roc(masks, scores)
-        # metrics over all data
-        print("auc:",  auc_score)
-
-        # per region overlap
-        max_step = 20000
-        max_th = scores.max()
-        min_th = scores.min()
-        delta = (max_th - min_th) / max_step
-
-        pros_mean = []
-        pros_std = []
-        threds = []
-        fprs = []
-        binary_score_maps = np.zeros_like(scores, dtype=np.bool)
-        for step in range(max_step):
-            thred = max_th - step * delta
-            #     print(thred)
-            # segmentation
-            binary_score_maps[scores <= thred] = 0
-            binary_score_maps[scores > thred] = 1
-
-            pro = []
-            for i in range(len(binary_score_maps)):
-                #         print(i)
-                label_map = measure.label(masks[i], connectivity=2)
-                props = measure.regionprops(label_map, binary_score_maps[i])
-                for prop in props:
-                    pro.append(prop.intensity_image.sum() / prop.area)
-            pros_mean.append(np.array(pro).mean())
-            pros_std.append(np.array(pro).std())
-            # fpr
-            masks_neg = ~masks
-            fpr = np.logical_and(masks_neg, binary_score_maps).sum() / masks_neg.sum()
-            fprs.append(fpr)
-            threds.append(thred)
-        # as array
-        threds = np.array(threds)
-        pros_mean = np.array(pros_mean)
-        pros_std = np.array(pros_std)
-        fprs = np.array(fprs)
-
-        # save results
-        data = np.vstack([threds, fprs, pros_mean, pros_std])
-        df_metrics = pd.DataFrame(data=data.T, columns=['thred', 'fpr',
-                                                        'pros_mean', 'pros_std'])
-        df_metrics.to_csv(os.path.join(self.eval_path, '{}_pro_fpr.csv'.format(self.model_name)),
-                          sep=',', index=False)
-
-
-        # default 30% fpr vs pro, pro_auc
-        idx = fprs <= expect_fpr    # # rescale fpr [0,0.3] -> [0, 1]
-        fprs_selected = fprs[idx]
-        fprs_selected = rescale(fprs_selected)
-        pros_mean_selected = rescale(pros_mean[idx])    # need scale
-        pro_auc_score = auc(fprs_selected, pros_mean_selected)
-        print("pro auc ({}% FPR):".format(int(expect_fpr*100)), pro_auc_score)
-
-        # save results
-        data = np.vstack([threds[idx], fprs[idx], pros_mean[idx], pros_std[idx]])
-        df_metrics = pd.DataFrame(data=data.T, columns=['thred', 'fpr',
-                                                        'pros_mean', 'pros_std'])
-        df_metrics.to_csv(os.path.join(self.eval_path, '{}_pro_fpr_{}.csv'.format(self.model_name, expect_fpr)),
-                          sep=',', index=False)
-
-        # save auc, pro as 30 fpr
-        np.savetxt(os.path.join(self.eval_path, '{}_auc_pro_auc_{}.txt'.format(self.model_name, expect_fpr)),
-                   np.vstack([auc_score, pro_auc_score]), delimiter=',')
 
     ######################################################
     #  Evaluation of segmentation
@@ -827,8 +701,7 @@ class AnoSegDFR():
         idx = fprs <= expect_fpr    # find the indexs of fprs that is less than expect_fpr (default 0.3)
         fprs_selected = fprs[idx]
         fprs_selected = rescale(fprs_selected)    # rescale fpr [0,0.3] -> [0, 1]
-#        pros_mean_selected = rescale(pros_mean[idx])    # need scale
-        pros_mean_selected = pros_mean[idx]    # no scale  (correct?)
+        pros_mean_selected = pros_mean[idx]    
         pro_auc_score = auc(fprs_selected, pros_mean_selected)
         print("pro auc ({}% FPR):".format(int(expect_fpr*100)), pro_auc_score)
 
@@ -901,40 +774,3 @@ class AnoSegDFR():
                 f.write("det_pr, det_auc\n")
                 f.write(f"{det_pr_score:.5f},{det_auc_score:.5f}") 
             
-
-if __name__ == "__main__":
-    anosegpcaae = AnoSegDFR(cfg=None)
-    anosegpcaae.train()
-    # anosegpcaae.evaluation_avg_img()
-    # anosegpcaae.threshold = 0.7
-    # anosegpcaae.segment_evaluation()
-    # anosegpcaae.pro_auc_evaluation()
-    # anosegpcaae.segmentation_results()
-    # anosegpcaae.estimate_thred_with_fpr(expect_fpr=0.1)
-    anosegpcaae.segment_evaluation_with_fpr(expect_fpr=0.005)
-    # anosegpcaae.segment_evaluation_with_otsu_li(seg_method='li')
-
-
-    ##################################################
-    # evaluation on all datasets
-    ##################################################
-    # textures: carpet, grid, leather, tile, wood
-    # objects: bottle, cable, capsule, hazelnut, metal_nut, pill, screw, toothbrush, transistor, zipper
-    level1 = ('relu1_1', 'relu1_2')
-    level2 = ('relu1_1', 'relu1_2', 'relu2_1', 'relu2_2')
-    level3 = ('relu1_1', 'relu1_2', 'relu2_1', 'relu2_2',
-              'relu3_1', 'relu3_2', 'relu3_3', 'relu3_4')
-    level4 = ('relu1_1', 'relu1_2', 'relu2_1', 'relu2_2',
-              'relu3_1', 'relu3_2', 'relu3_3', 'relu3_4',
-              'relu4_1', 'relu4_2', 'relu4_3', 'relu4_4')
-    level5 = ('relu1_1', 'relu1_2', 'relu2_1', 'relu2_2',
-              'relu3_1', 'relu3_2', 'relu3_3', 'relu3_4',
-              'relu4_1', 'relu4_2', 'relu4_3', 'relu4_4',
-              'relu5_1', 'relu5_2', 'relu5_3', 'relu5_4')
-    levels = [level1, level2, level3, level4, level5]
-
-    textures = ['carpet', 'grid', 'leather', 'tile', 'wood']
-    objects = ['bottle', 'cable', 'capsule', 'hazelnut', 'metal_nut',
-               'pill', 'screw', 'toothbrush', 'transistor', 'zipper']
-    data_names = textures + objects
-

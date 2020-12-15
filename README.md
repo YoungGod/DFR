@@ -1,5 +1,5 @@
 # DFR
-Project: Unsupervised Anomaly Segmentation via Deep Feature Reconstruction
+Project: Unsupervised Anomaly Detection and Segmentation
 
 Paper: Unsupervised anomaly segmentation via deep feature reconstruction  | **[Neurocomputing]**[`pdf`](https://www.sciencedirect.com/science/article/pii/S0925231220317951)['code'](https://github.com/YoungGod/DFR) | **arxive preprint**['pdf'](https://arxiv.org/abs/2012.07122)
 
@@ -14,7 +14,7 @@ Introduction: Automatic detecting anomalous regions in images of objects or text
 
 # Citation
 If you find something useful, wellcome to cite our paper:
-
+```
 @article{DFR2020,
     title = "Unsupervised anomaly segmentation via deep feature reconstruction",
     journal = "Neurocomputing",
@@ -24,7 +24,9 @@ If you find something useful, wellcome to cite our paper:
     url = "http://www.sciencedirect.com/science/article/pii/S0925231220317951",
     author = "Yong Shi and Jie Yang and Zhiquan Qi",
 }
+```
 
+```
 @misc{yang2020dfr,
       title={DFR: Deep Feature Reconstruction for Unsupervised Anomaly Segmentation}, 
       author={Jie Yang and Yong Shi and Zhiquan Qi},
@@ -33,3 +35,4 @@ If you find something useful, wellcome to cite our paper:
       archivePrefix={arXiv},
       primaryClass={cs.CV}
 }
+```

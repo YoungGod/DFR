@@ -18,6 +18,13 @@ model_urls = {
     'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
 }
 
+# if we have the pretrained files
+model_dirs = {
+    'vgg11': '/home/jovyan/work/model-checkpoints/vgg11-bbd30ac9.pth',
+    'vgg13': '/home/jovyan/work/model-checkpoints/vgg13-c768596a.pth',
+    'vgg16': '/home/jovyan/work/model-checkpoints/vgg16-397923af.pth',
+    'vgg19': '/home/jovyan/work/model-checkpoints/vgg19-dcbb9e9d.pth',
+}
 
 class VGG(nn.Module):
 
@@ -91,8 +98,10 @@ def _vgg(arch, cfg, batch_norm, pretrained, progress, **kwargs):
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
     if pretrained:
+        # TODO
         state_dict = load_state_dict_from_url(model_urls[arch],
                                               progress=progress)
+        # state_dict = torch.load(model_dirs[arch])    # if we have the pretrained files
         model.load_state_dict(state_dict)
     return model
 

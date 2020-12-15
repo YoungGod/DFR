@@ -189,17 +189,24 @@ class TestDataset(Dataset):
         if img_name.split('/')[-2] == "good":
             mask = np.zeros((256, 256))
         else:
-            mask_path = img_name.replace("test", "ground_truth").split(".")[-2] + "_mask.png"
-            mask = imread(mask_path)
-            mask = resize(mask, (256, 256))
+            if "wine" in self.img_files[idx]:
+                mask_path = img_name.replace("test", "ground_truth").split(".")[-2] + ".png"
+                mask = imread(mask_path, as_gray=True)
+                mask = resize(mask, (256, 256))
+            else:
+                mask_path = img_name.replace("test", "ground_truth").split(".")[-2] + "_mask.png"
+                mask = imread(mask_path, as_gray=True)
+                mask = resize(mask, (256, 256))
         return img, mask, img_name
 
     def _get_image_files(self, path, ext={'.jpg', '.png'}):
         images = []
         for root, dirs, files in os.walk(path):
+            if "check" in root:
+                continue
             print('loading image files ' + root)
             for file in files:
-                if os.path.splitext(file)[1] in ext:
+                if os.path.splitext(file)[-1] in ext and 'checkpoint' not in file:
                     images.append(os.path.join(root, file))
         return sorted(images)
 
@@ -389,35 +396,32 @@ def build_dataset_from_featmap(x, mask=None, ksize=5, stride=5, agg_type='avg', 
     return xx, mm
 
 if __name__ == "__main__":
-    data_name = "toothbrush"
-    abnormal_data_path = "/home/jie/Datasets/mvtec-anomaly/" + data_name + "/test"
-    normal_data_path = "/home/jie/Datasets/mvtec-anomaly/" + data_name + "/train"
-    # train_data = TrainTestDataset(abnormal_path=abnormal_data_path, normal_path=normal_data_path,
-    #                               is_train=True, train_size=0.4, seed=0)
-    # print(train_data.img_normal_files)
+    data_name = "bottle"
+    train_data_path = "/home/jovyan/work/dataset/MVAomaly/"+ data_name + "/train"
+    test_data_path = "/home/jovyan/work/dataset/MVAomaly/" + data_name + "/test"
+    train_data = NormalDataset(path=train_data_path)
+    test_data = TestDataset(path=test_data_path)
     # print(train_data.img_files)
+    for img_file in test_data.img_files:
+        print(img_file)
+
     # # data loader
-    #
-    from torch.utils.data import DataLoader
-    # train_data_loader = DataLoader(train_data, batch_size=1, shuffle=True, num_workers=4)
-    # for abnormal_img, mask, normal_img, abnormal_img_name in train_data_loader:
+    # from torch.utils.data import DataLoader
+    # # train_data_loader = DataLoader(train_data, batch_size=1, shuffle=True, num_workers=1)
+    # # for normal_img in train_data_loader:
+    # #     print("#############")
+    # #     print(normal_img.shape)
+
+
+    # test_data_loader = DataLoader(test_data, batch_size=1, shuffle=False, num_workers=1)
+    # for abnormal_img, mask, abnormal_img_name in test_data_loader:
     #     print("#############")
     #     print(abnormal_img_name)
     #     print(abnormal_img.shape)
     #     print(mask.shape)
-    #     print(normal_img.shape)
+    #     print(mask.max(), mask.min())
 
-    # test data
-    test_data = TrainTestDataset(abnormal_path=abnormal_data_path,
-                                  is_train=False, train_size=0.4, seed=0)
-    print(test_data.img_files)
 
-    test_data_loader = DataLoader(test_data, batch_size=1, shuffle=True, num_workers=4)
-    for abnormal_img, mask, abnormal_img_name in test_data_loader:
-        print("#############")
-        print(abnormal_img_name)
-        print(abnormal_img.shape)
-        print(mask.shape)
 
 
 

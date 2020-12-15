@@ -43,6 +43,7 @@ class Extractor(nn.Module):
     def __init__(self, backbone='vgg19',
                  cnn_layers=("relu1_1",),
                  upsample="nearest",
+                 is_agg=True,
                  kernel_size=(4, 4),
                  stride=(4, 4),
                  dilation=1,
@@ -53,6 +54,7 @@ class Extractor(nn.Module):
         self.device = torch.device(device)
         self.feature = backbone_nets[backbone]()    # build backbone net
         self.feat_layers = cnn_layers
+        self.is_agg = is_agg
         self.map_size = featmap_size
         self.upsample = upsample
         self.patch_size = kernel_size
@@ -78,16 +80,32 @@ class Extractor(nn.Module):
         feat_maps = self.feature(input, feature_layers=self.feat_layers)
         features = torch.Tensor().to(self.device)
         # extracting features
-        for name, feat_map in feat_maps.items():
-            # resizing
-            feat_map = nn.functional.interpolate(feat_map, size=self.out_size, mode=self.upsample)
-            # # print("feat_map:", feat_map.shape)
-            # feat_map = self.replicationpad(feat_map)
-            # # aggregating features for every pixel
-            # feat_map = self.feat_agg(feat_map)
-            # concatenating
-            features = torch.cat([features, feat_map], dim=1)  # (b, ci + cj, h*w); (b, c, l)
-            # print("Before reshaping:", features.shape)
+        for _, feat_map in feat_maps.items():
+            if self.is_agg:
+                # with aggregations
+                # resizing
+                feat_map = nn.functional.interpolate(feat_map, size=self.map_size, mode=self.upsample, align_corners=True if self.upsample == 'bilinear' else None)
+                # # print("feat_map:", feat_map.shape)
+                feat_map = self.replicationpad(feat_map)
+                # # aggregating features for every pixel
+                feat_map = self.feat_agg(feat_map)
+                # concatenating
+                features = torch.cat([features, feat_map], dim=1)  # (b, ci + cj, h*w); (b, c, l)
+                # print("Before reshaping:", features.shape)
+            else:
+                # no aggregations
+                # resizing
+                feat_map = nn.functional.interpolate(feat_map, size=self.out_size, mode=self.upsample)
+                # # print("feat_map:", feat_map.shape)
+                # feat_map = self.replicationpad(feat_map)
+                # # aggregating features for every pixel
+                # feat_map = self.feat_agg(feat_map)
+                # concatenating
+                features = torch.cat([features, feat_map], dim=1)  # (b, ci + cj, h*w); (b, c, l)
+                # print("Before reshaping:", features.shape)
+        b, c, _ = features.shape
+        features = torch.reshape(features, (b, c, self.out_size[0], self.out_size[1]))
+
         return features
 
     def feat_vec(self, input):
@@ -96,7 +114,7 @@ class Extractor(nn.Module):
         # extracting features
         for name, feat_map in feat_maps.items():
             # resizing
-            feat_map = nn.functional.interpolate(feat_map, size=self.map_size, mode=self.upsample)
+            feat_map = nn.functional.interpolate(feat_map, size=self.map_size, mode=self.upsample, align_corners=True if self.upsample == 'bilinear' else None)
             # print("feat_map:", feat_map.shape)
             # feat_map = feat_map[:,:,16:272,16:272]    # center crop 256x256
             # print("feat_map:", feat_map.shape)
@@ -118,7 +136,6 @@ class Extractor(nn.Module):
         # print("Features len:", len(features))
         features = torch.cat(features, dim=0)  # (l*b, c); every (l, c) corresponds to a feature map
         return features
-
 
 if __name__ == "__main__":
     import time

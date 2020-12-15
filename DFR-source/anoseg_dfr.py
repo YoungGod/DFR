@@ -445,7 +445,7 @@ class AnoSegDFR():
         print("auc:",  auc_score)
 
         # per region overlap
-        max_step = 20000
+        max_step = 5000
         max_th = scores.max()
         min_th = scores.min()
         delta = (max_th - min_th) / max_step
@@ -494,7 +494,7 @@ class AnoSegDFR():
         idx = fprs <= expect_fpr    # # rescale fpr [0,0.3] -> [0, 1]
         fprs_selected = fprs[idx]
         fprs_selected = rescale(fprs_selected)
-        pros_mean_selected = rescale(pros_mean[idx])    # need scale
+        pros_mean_selected = pros_mean[idx]   
         pro_auc_score = auc(fprs_selected, pros_mean_selected)
         print("pro auc ({}% FPR):".format(int(expect_fpr*100)), pro_auc_score)
 

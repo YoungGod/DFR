@@ -55,53 +55,8 @@ def config():
 
 if __name__ == "__main__":
 
-    # New Baseline Contexts:
-    """
-    (2) Bilinear upsample
-    (3) Refection padding
-    (4) L9 - L12 layers
-    (5) 256x256 -> 64x64, 4x4 non-overlap patches
-    (6) BN layers in CAE
-    """
-    #########################################
-    #    Single data testing
-    #########################################
-#     data_name = "wine"
-#     cfg = config()
-#     cfg.device ="cuda:1"
-# #     cfg.mode = "evaluation"
-#     cfg.save_path = "/home/jie/Python-Workspace/Pycharm-Projects/Anomaly-2020/DFR-Baseline"
-#     cfg.cnn_layers = ('relu4_1', 'relu4_2', 'relu4_3', 'relu4_4')
-#     cfg.cnn_layers = ('relu1_1', 'relu1_2', 'relu2_1', 'relu2_2',
-#                'relu3_1', 'relu3_2', 'relu3_3', 'relu3_4',
-#                'relu4_1', 'relu4_2', 'relu4_3', 'relu4_4')    #               'relu5_1', 'relu5_2', 'relu5_3', 'relu5_4'
-
-#     cfg.data_name = data_name
-#     if "wine" in data_name:
-#         cfg.train_data_path = "/home/jie/Datasets/wine_anomaly_cropped/train"
-#         cfg.test_data_path = "/home/jie/Datasets/wine_anomaly_cropped/test"
-#     else:
-#         cfg.train_data_path = "/home/jie/Datasets/MVAomaly/" + data_name + "/train/good"
-#         cfg.test_data_path = "/home/jie/Datasets/MVAomaly/" + data_name + "/test"
-    
-#     dfr = AnoSegDFR(cfg=cfg)    # model
-
-#     if cfg.mode == "train":
-#         dfr.train()
-#         # dfr.validation(10)
-#     if cfg.mode == "evaluation":
-# #         dfr.threshold = dfr.estimate_thred_with_fpr(expect_fpr=0)
-# #         dfr.segmentation_results()
-#         # dfr.segmentation_evaluation()
-# #         dfr.pro_auc_evaluation()
-# #         dfr.metrics_evaluation()
-
     #########################################
     #    On the whole data
-    #
-    # Experiments:
-    # no agg: python main.py --mode train  --upsample nearest --is_agg False --is_bn False (l1 - l12)
-    # no agg: python main.py --mode train  --upsample bilinear --is_agg False --is_bn True (l1 - l12)
     #########################################
     cfg = config()
     cfg.save_path = "/home/jie/Python-Workspace/Pycharm-Projects/Anomaly-2020/DFR-Baseline"
@@ -112,19 +67,13 @@ if __name__ == "__main__":
     cfg.cnn_layers = ('relu1_1', 'relu1_2', 'relu2_1', 'relu2_2',
                   'relu3_1', 'relu3_2', 'relu3_3', 'relu3_4',
                   'relu4_1', 'relu4_2', 'relu4_3', 'relu4_4')
-    # cfg.cnn_layers = ('relu5_4',)
-    # cfg.upsample = 'nearest'
-    # cfg.is_agg = True
-
-    # # cae detector
-    # cfg.is_bn = False
 
     # dataset
-    textures = ['carpet', 'grid', 'leather', 'tile', 'wood', 'wine']
+    textures = ['carpet', 'grid', 'leather', 'tile', 'wood']
     objects = ['bottle','cable', 'capsule','hazelnut', 'metal_nut',
-               'pill', 'screw', 'toothbrush', 'transistor', 'zipper']    # 'bottle', 
+               'pill', 'screw', 'toothbrush', 'transistor', 'zipper'] 
     data_names = objects + textures
-#     data_names = ['wine']
+
     # train or evaluation
     for data_name in data_names:
         cfg.data_name = data_name
@@ -134,8 +83,6 @@ if __name__ == "__main__":
         dfr = AnoSegDFR(cfg)
         if cfg.mode == "train":
             dfr.train()
-            # dfr.validation(0)
         else:
-#             dfr.pro_auc_evaluation()
             dfr.metrics_evaluation()
 #             dfr.metrics_detecion()

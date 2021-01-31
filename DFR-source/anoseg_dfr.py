@@ -655,7 +655,8 @@ class AnoSegDFR():
                 for prop in props:
                     x_min, y_min, x_max, y_max = prop.bbox    # find the bounding box of an anomaly region 
                     cropped_pred_label = binary_score_maps[i][x_min:x_max, y_min:y_max]
-                    cropped_mask = masks[i][x_min:x_max, y_min:y_max]
+                    # cropped_mask = masks[i][x_min:x_max, y_min:y_max]   # bug!
+                    cropped_mask = prop.filled_image    # corrected!
                     intersection = np.logical_and(cropped_pred_label, cropped_mask).astype(np.float32).sum()
                     pro.append(intersection / prop.area)
                 # iou (per image level)
